@@ -16,7 +16,6 @@
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-int prueba = 0;
 
 DXRR* dxrr;
 GamePadRR* gamePad;
