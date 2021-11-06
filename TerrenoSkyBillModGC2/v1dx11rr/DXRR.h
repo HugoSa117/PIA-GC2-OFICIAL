@@ -94,10 +94,10 @@ public:
 
 		//Nuevos modelos
 		banca01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Banca01/banca01.obj", L"Assets/Banca01/color_banca01.png", L"Assets/Banca01/specular_banca01.png", 40, 0);
-		cabaña01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña01/cabana01.obj", L"Assets/Cabaña01/color_cabaña01.jpg", L"Assets/Cabaña01/specular_cabaña01.jpg", 75, 0);
-		techoCabaña01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña01/techoCabana01.obj", L"Assets/Cabaña01/color_techoCabaña01.jpg", L"Assets/Cabaña01/specular_techoCabaña1.jpg", 75, 0);
-		cabaña02 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña02/cabana02.obj", L"Assets/Cabaña02/color_cabaña02.jpg", L"Assets/Cabaña02/specular_cabaña02.jpg", 50, 0);
-		cabaña03 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña03/cabana03.obj", L"Assets/Cabaña03/color_cabaña03.png", L"Assets/Cabaña03/specular_cabaña03.png", 25, 0);
+		cabaña01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña01/cabaña01.obj", L"Assets/Cabaña01/color_cabaña01.jpg", L"Assets/Cabaña01/specular_cabaña01.jpg", 75, 0);
+		techoCabaña01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña01/techoCabaña01.obj", L"Assets/Cabaña01/color_techoCabaña01.jpg", L"Assets/Cabaña01/specular_techoCabaña1.jpg", 75, 0);
+		cabaña02 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña02/cabaña02.obj", L"Assets/Cabaña02/color_cabaña02.jpg", L"Assets/Cabaña02/specular_cabaña02.jpg", 50, 0);
+		cabaña03 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña03/cabaña03.obj", L"Assets/Cabaña03/color_cabaña03.png", L"Assets/Cabaña03/specular_cabaña03.png", 25, 0);
 		troncos01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Tronco/Troncos.obj", L"Assets/Tronco/color_tronco.png", L"Assets/Tronco/specular_tronco.jpg", -25, 0);
 		camioneta01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Camioneta01/camioneta01.obj", L"Assets/Camioneta01/color_camioneta01.jpg", L"Assets/Camioneta01/specular_camioneta01.png", -5, 0);
 		
