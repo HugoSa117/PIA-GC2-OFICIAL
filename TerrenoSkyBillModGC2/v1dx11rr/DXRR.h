@@ -16,7 +16,7 @@ class DXRR{
 private:
 	int ancho;
 	int alto;
-
+	int prueba2;
 	int prueba;	//Variable de prueba commit
 
 public:	
