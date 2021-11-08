@@ -44,6 +44,13 @@ public:
 	TerrenoRR *terreno;
 	SkyDome *skydome;
 	BillboardRR *billboard;
+	//Billboards
+	BillboardRR* arbol01;
+	BillboardRR* arbol02;
+	BillboardRR* arbol03;
+	BillboardRR* arbol04;
+
+
 	Camara *camara;
 	ModeloRR* model;
 
@@ -88,9 +95,15 @@ public:
 		billCargaFuego();
 		camara = new Camara(D3DXVECTOR3(0,80,6), D3DXVECTOR3(0,80,0), D3DXVECTOR3(0,1,0), Ancho, Alto);
 		terreno = new TerrenoRR(300, 300, d3dDevice, d3dContext);
-		skydome = new SkyDome(40, 40, 200.0f, &d3dDevice, &d3dContext, L"skydome1.png");
+		skydome = new SkyDome(40, 40, 200.0f, &d3dDevice, &d3dContext, L"skydome1.png", L"skydome2.jpg");
 		billboard = new BillboardRR(L"Assets/Billboards/fuego-anim.png",L"Assets/Billboards/fuego-anim-normal.png", d3dDevice, d3dContext, 5);
 		model = new ModeloRR(d3dDevice, d3dContext, "Assets/Cofre/Cofre.obj", L"Assets/Cofre/Cofre-color.png", L"Assets/Cofre/Cofre-spec.png", 0, 0);
+
+		//Billboards
+		arbol01 = new BillboardRR(L"Assets/Billboards/tree01_colorMap.png", L"Assets/Billboards/tree01_normalMap.png", d3dDevice, d3dContext, 10);
+		arbol02 = new BillboardRR(L"Assets/Billboards/tree02_colorMap.png", L"Assets/Billboards/tree02_normalMap.png", d3dDevice, d3dContext, 10);
+		arbol03 = new BillboardRR(L"Assets/Billboards/tree03_colorMap.png", L"Assets/Billboards/tree03_normalMap.png", d3dDevice, d3dContext, 10);
+		arbol04 = new BillboardRR(L"Assets/Billboards/tree04_colorMap.png", L"Assets/Billboards/tree04_normalMap.png", d3dDevice, d3dContext, 10);
 
 		//Nuevos modelos
 		banca01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Banca01/banca01.obj", L"Assets/Banca01/color_banca01.png", L"Assets/Banca01/specular_banca01.png", 40, 0);
@@ -269,10 +282,86 @@ public:
 	
 	void Render(void)
 	{
+		static float velocidad = 0.0005;				//Velocidad de ciclo
+
+		D3DXCOLOR colorDia = D3DXCOLOR(255, 255, 255, 1);
+		D3DXCOLOR colorTarde = D3DXCOLOR(234, 189, 137, 1);
+		D3DXCOLOR colorNoche = D3DXCOLOR(60, 138, 207, 1);
+
+		D3DXCOLOR colorAmbiental;
+		D3DXCOLOR colorDifuso = D3DXCOLOR(255 /255, 255 /255, 255 /255, 1);
+
+		///////////////////////ROTACION DE SOL///////////////////////
+		static float factorRotacion = 0.0;
+		factorRotacion += velocidad;
+		if (factorRotacion > 1.0) {
+			factorRotacion = 0.0;
+		}
+
+		float anguloRotacion = 360 * factorRotacion;
+
+		D3DXVECTOR4 luz(0, 10000, 0, 1);			//posicion inicial de luz
+		//Crear matriz de rotacion para el sol
+		D3DXMATRIX rotacionSol;
+		D3DXMatrixRotationZ(&rotacionSol, anguloRotacion * 0.0174533);
+		//Obtener vector de luz rotado
+		D3DXVECTOR4 SOL;							//Guarda vector de sol rotado y trasladado
+		D3DXVec4Transform(&SOL, &luz, &rotacionSol);	
+		D3DXVECTOR3 solecito = D3DXVECTOR3(SOL);
+
+
+		///////////////////////CALCULO DE LUCES///////////////////////
+
+		float blend = 0;		//de 0 a 1 (cuando su maximo es 0.25)
+		if (factorRotacion <= 0.25) {
+			blend = factorRotacion * 4;	
+			D3DXColorLerp(&colorAmbiental, &colorDia, &colorTarde, blend);
+		}
+		else if (factorRotacion <= 0.5 && factorRotacion > 0.25) {
+			blend = (factorRotacion - 0.25) * 4;
+			D3DXColorLerp(&colorAmbiental, &colorTarde, &colorNoche, blend);
+		}
+		else if (factorRotacion <= 0.75 && factorRotacion > 0.5) {
+			blend = (factorRotacion - 0.5) * 4;
+			D3DXColorLerp(&colorAmbiental, &colorNoche, &colorTarde, blend);
+		}
+		else if (factorRotacion > 0.75) {
+			blend = (factorRotacion - 0.75) * 4;
+			D3DXColorLerp(&colorAmbiental, &colorTarde, &colorDia, blend);
+		}
+
+		//Crear vectores de luz resultantes
+		D3DXVECTOR4 AMBIENTAL = D3DXVECTOR4(D3DXVECTOR3(
+			colorAmbiental.r / 255, 
+			colorAmbiental.g / 255, 
+			colorAmbiental.b / 255), 
+			1
+		);
+
+		D3DXVECTOR4 DIFUSO = D3DXVECTOR4(D3DXVECTOR3(colorDifuso), 1);
+
+
+		/////////////////////////ACTUALIZAR BLEND DE SKYDOME///////////////
+		static bool dia = true;	//true: di a noche, false: noche a dia
+		static float blendSky = 0.0;
+		if (dia) {
+			blendSky += velocidad * 2;
+		}
+		else {
+			blendSky -= velocidad * 2;
+		}
+
+		if (factorRotacion >= 0.5) {
+			dia = false;
+		}
+		else {
+			dia = true;
+		}
+
 		float sphere[3] = { 0,0,0 };
 		float prevPos[3] = { camara->posCam.x, camara->posCam.z, camara->posCam.z };
 		static float angle = 0.0f;
-		angle += 0.005;
+		angle += 0.001;
 		if (angle >= 360) angle = 0.0f;
 		bool collide = false;
 		if( d3dContext == 0 )
@@ -288,24 +377,38 @@ public:
 		float camPosXZ[2] = { camara->posCam.x, camara->posCam.z };
 
 		TurnOffDepth();
-		skydome->Render(camara->posCam);
+		skydome->Render(camara->posCam, angle, AMBIENTAL, blendSky);
 		TurnOnDepth();
-		terreno->Draw(camara->vista, camara->proyeccion);
+		terreno->Draw(camara->vista, camara->proyeccion, AMBIENTAL, DIFUSO, SOL);
 		//TurnOnAlphaBlending();
-		billboard->Draw(camara->vista, camara->proyeccion, camara->posCam,
-			-11, -78, 4, 5, uv1, uv2, uv3, uv4, frameBillboard);
+		/*billboard->Draw(camara->vista, camara->proyeccion, camara->posCam,
+			-11, -78, 4, 5, uv1, uv2, uv3, uv4, frameBillboard);*/
+
+		arbol01->DrawBill(camara->vista, camara->proyeccion, camara->posCam,
+			-11, -78, terreno->Superficie(-11, -78), 5, AMBIENTAL, DIFUSO, SOL);
+
+		arbol02->DrawBill(camara->vista, camara->proyeccion, camara->posCam,
+			-22, -78, terreno->Superficie(-22, -78), 5, AMBIENTAL, DIFUSO, SOL);
+
+		arbol03->DrawBill(camara->vista, camara->proyeccion, camara->posCam,
+			-33, -78, terreno->Superficie(-33, -78), 5, AMBIENTAL, DIFUSO, SOL);
+
+		arbol04->DrawBill(camara->vista, camara->proyeccion, camara->posCam,
+			11, -78, terreno->Superficie(11, -78), 8, AMBIENTAL, DIFUSO, SOL);
+
 
 		//TurnOffAlphaBlending();
 		//model->Draw(camara->vista, camara->proyeccion, terreno->Superficie(100, 20), camara->posCam, 10.0f, 0, 'A', 1);
 
 		//Nuevos modelos
-		banca01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(40, 20) , camara->posCam, 10.0f, 0, 'A', 1);
+
+		/*banca01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(40, 20) , camara->posCam, 10.0f, 0, 'A', 1);
 		cabaña01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(75, 20) , camara->posCam, 10.0f, 0, 'A', 1);
 		techoCabaña01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(75, 20) , camara->posCam, 10.0f, 0, 'A', 1);
 		cabaña02->Draw(camara->vista, camara->proyeccion, terreno->Superficie(50, 20) , camara->posCam, 10.0f, 0, 'A', 1);
 		cabaña03->Draw(camara->vista, camara->proyeccion, terreno->Superficie(20, 0) , camara->posCam, 10.0f, 0, 'Y', 1);
 	    troncos01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(-25, 0), camara->posCam, 10.0f, 0, 'A', 1);
-		camioneta01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(40, 0), camara->posCam, 10.0f, 0, 'A', 1);
+		camioneta01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(40, 0), camara->posCam, 10.0f, 0, 'A', 1);*/
 
 		swapChain->Present( 1, 0 );
 	}

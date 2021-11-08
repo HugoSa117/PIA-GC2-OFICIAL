@@ -24,7 +24,14 @@ public:
 		D3DXVECTOR3 pos;
 	};
 
-	
+	struct LightBuffer {
+		D3DXVECTOR4 ambiental = D3DXVECTOR4(0, 0, 0, 1);
+		D3DXVECTOR4 difuso = D3DXVECTOR4(0, 0, 0, 1);
+		D3DXVECTOR4 direccionLuz = D3DXVECTOR4(0, 0, 0, 1);
+	};
+	//
+	LightBuffer lighBuffer;
+	ID3D11Buffer* lightDirCB;
 
 	ID3D11VertexShader* VertexShaderVS;
 	ID3D11PixelShader* solidColorPS;
@@ -110,7 +117,7 @@ public:
 		//cargamos el shaders de vertices que esta contenido en el Shader.fx, note
 		//que VS_Main es el nombre del vertex shader en el shader, vsBuffer contendra
 		//al puntero del mismo
-		bool compileResult = CompileD3DShader(L"Billboard.hlsl", "VS_Main", "vs_4_0", &vsBuffer);
+		bool compileResult = CompileD3DShader(L"Billboard.fx", "VS_Main", "vs_4_0", &vsBuffer);
 		//en caso de no poder cargarse ahi muere la cosa
 		if (compileResult == false)
 		{
@@ -153,7 +160,7 @@ public:
 		ID3DBlob* psBuffer = 0;
 		// de los vertices pasamos al pixel shader, note que el nombre del shader es el mismo
 		//ahora buscamos al pixel shader llamado PS_Main
-		compileResult = CompileD3DShader(L"Billboard.hlsl", "PS_Main", "ps_4_0", &psBuffer);
+		compileResult = CompileD3DShader(L"Billboard.fx", "PS_Main", "ps_4_0", &psBuffer);
 
 		if (compileResult == false)
 		{
@@ -268,6 +275,14 @@ public:
 		//de mundo
 		d3dResult = d3dDevice->CreateBuffer(&constDesc, 0, &worldCB);
 
+		if (FAILED(d3dResult))
+		{
+			return false;
+		}
+
+		//Crear bufer de nueva estructura
+		constDesc.ByteWidth = sizeof(LightBuffer);
+		d3dResult = d3dDevice->CreateBuffer(&constDesc, 0, &lightDirCB);
 		if (FAILED(d3dResult))
 		{
 			return false;
@@ -419,6 +434,83 @@ public:
 		d3dContext->DrawIndexed(6, 0, 0);
 
 
+	}
+
+	void DrawBill(
+		D3DXMATRIX vista, 
+		D3DXMATRIX proyeccion, 
+		D3DXVECTOR3 poscam,
+		float xx, 
+		float zz, 
+		float posy, 
+		float escala,
+		D3DXVECTOR4 vecAmbiental,
+		D3DXVECTOR4 vecDifuso,
+		D3DXVECTOR4 direccionLuz)
+	{
+		//Cargar elementos de estrucura de luces
+		lighBuffer.ambiental = vecAmbiental;
+		lighBuffer.difuso = vecDifuso;
+		lighBuffer.direccionLuz = direccionLuz;
+
+
+		posx = xx;
+		posz = zz;
+
+		//paso de datos, es decir cuanto es el ancho de la estructura
+		unsigned int stride = sizeof(VertexComponent);
+		unsigned int offset = 0;
+
+		//define la estructura del vertice a traves de layout
+		d3dContext->IASetInputLayout(inputLay);
+
+		//define con que buffer trabajara
+		d3dContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+		//define con buffer de indices trabajara
+		d3dContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		//define la forma de conexion de los vertices
+		d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		//Establece el vertex y pixel shader que utilizara
+		d3dContext->VSSetShader(VertexShaderVS, 0, 0);
+		d3dContext->PSSetShader(solidColorPS, 0, 0);
+		//pasa lo sbuffers al shader
+		d3dContext->PSSetShaderResources(0, 1, &colorMap);
+		d3dContext->PSSetShaderResources(1, 1, &normalMap);
+		d3dContext->PSSetSamplers(0, 1, &colorMapSampler);
+
+		//mueve la camara
+		float difz = poscam.z - posz;
+		float difx = poscam.x - posx;
+		float dist = sqrt(difz * difz + difx * difx);
+		float angle = acos(difx / dist);// * (180.0 / D3DX_PI);
+
+		D3DXMATRIX rotationMat;
+		D3DXMatrixIdentity(&rotationMat);
+		rotationMat._11 = rotationMat._33 = difx / dist;
+		rotationMat._13 = difz / dist;
+		rotationMat._31 = -rotationMat._13;
+
+		D3DXMATRIX translationMat;
+		D3DXMatrixTranslation(&translationMat, posx, posy, posz);
+
+		D3DXMATRIX worldMat = rotationMat * translationMat;
+		D3DXMatrixTranspose(&worldMat, &worldMat);
+
+
+		//actualiza los buffers del shader
+		d3dContext->UpdateSubresource(worldCB, 0, 0, &worldMat, 0, 0);
+		d3dContext->UpdateSubresource(viewCB, 0, 0, &vista, 0, 0);
+		d3dContext->UpdateSubresource(projCB, 0, 0, &proyeccion, 0, 0);
+		d3dContext->UpdateSubresource(lightDirCB, 0, 0, &lighBuffer, 0, 0);
+		//le pasa al shader los buffers
+		d3dContext->VSSetConstantBuffers(0, 1, &worldCB);
+		d3dContext->VSSetConstantBuffers(1, 1, &viewCB);
+		d3dContext->VSSetConstantBuffers(2, 1, &projCB);
+		d3dContext->VSSetConstantBuffers(3, 1, &lightDirCB);
+		//cantidad de trabajos
+
+		d3dContext->DrawIndexed(8, 0, 0);
 	}
 
 	void estableceIndices()

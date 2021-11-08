@@ -71,5 +71,8 @@
     <FxCompile Include="Modelo.fx">
       <Filter>Archivos de código fuente</Filter>
     </FxCompile>
+    <FxCompile Include="Billboard.fx">
+      <Filter>Archivos de código fuente</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
