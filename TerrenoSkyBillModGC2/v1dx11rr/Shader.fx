@@ -23,6 +23,13 @@ cbuffer cbChangeOnResize : register(b2)
 	matrix projMatrix;
 };
 
+cbuffer cbLightBuffers : register(b3)
+{
+	float3 colorAmbiental;
+	float3 colorDifuso;
+	float3 direccionLuz;
+}
+
 struct VS_Input
 {
 	float4 pos : POSITION;
@@ -44,6 +51,10 @@ struct PS_Input
 	float3 normal : NORMAL0;
 	float3 tangent : NORMAL1;
 	float3 binorm : NORMAL2;
+
+	float3 ambient : COLOR0;
+	float3 diffuse : COLOR1;
+	float3 lightDirection : TEXCOORD3;
 };
 
 PS_Input VS_Main(VS_Input vertex)
@@ -66,6 +77,10 @@ PS_Input VS_Main(VS_Input vertex)
 	vsOut.normal = normalize(mul(vertex.normal, worldMatrix));
 	vsOut.tangent = normalize(mul(vertex.tangente, worldMatrix));
 	vsOut.binorm = normalize(mul(vertex.binormal, worldMatrix));
+
+	vsOut.ambient = colorAmbiental;
+	vsOut.diffuse = colorDifuso;
+	vsOut.lightDirection = normalize(direccionLuz);
 
 	return vsOut;
 }
@@ -96,17 +111,30 @@ float4 PS_Main(PS_Input pix) : SV_TARGET
 	textNormF = (textNormF * blendTex2) + ((1.0 - blendTex2) * normalText2);
 
 	//Crear matriz de normales
-	float4 bumpMap = (2.0 * textNormF) - 1.0;
-	float3 bumpNorm = (bumpMap.x * pix.tangent) + (bumpMap.y * pix.binorm) + (bumpMap.z * pix.normal);
-	bumpNorm = normalize(bumpNorm);
+	float3 bumpMap = (2.0 * textNormF) - 1.0;	//de rgb a xyz
+	//float3 bumpNorm = (bumpMap.x * pix.tangent) + (bumpMap.y * pix.binorm) + (bumpMap.z * pix.normal);
+	//bumpNorm = normalize(bumpNorm);
+
+	float3x3 TBN = { { pix.tangent }, { pix.binorm }, { pix.normal} };
+	float3 newNormal = mul(TBN, bumpMap);
+	newNormal = normalize(newNormal);
+
+	////////////////////////LUZ AMBIENTAL////////////////////////
+	float4 LuzAmbiental = float4(pix.ambient, 1);	//luz ambiental
+	float FA = 0.8;									//factor atenuacion ambiental
+	float4 AportAmb = LuzAmbiental * FA;			//aportacion ambiental
+
+	////////////////////////LUZ DIFUSA////////////////////////
+	float3 DirLuz = normalize(pix.lightDirection);			//Direccion de luz
+	float4 LuzDifusa = float4(pix.diffuse, 1);				//luz difusa
+	float FAD = 1.0;										//factor atenuacion difusa
+	
+	float FALL = dot(-DirLuz, newNormal);					//factor atenuacion ley de lambert
+	float4 AportDif = saturate(LuzDifusa * FALL * FAD);		//aportacion difusa 0 a 1
+
+	fColor = textf * (AportAmb + AportDif);
 
 	/*
-	float3 bump = (2.0 * textNormF) - 1.0;
-	float3x3 TBN = { {pix.tangent}, {pix.binorm}, {pix.normal} };
-	float3 newnormal = mul(TBN, bump);
-	newnormal = normalize(newnormal);
-	*/
-	
 	float3 DiffuseDirection = float3(0.0f, -1.0f, 0.0f);
 	float4 DiffuseColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -116,6 +144,6 @@ float4 PS_Main(PS_Input pix) : SV_TARGET
 	diffuse = saturate(diffuse + ambient);
 
 	fColor = float4(textf.rgb * diffuse, 1.0f);
-
+	*/
 	return fColor;
 }

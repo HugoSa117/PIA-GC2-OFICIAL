@@ -26,6 +26,14 @@ private:
 		D3DXVECTOR3 pos;		
 	};
 
+	struct LightBuffer {
+		D3DXVECTOR4 ambiental = D3DXVECTOR4(0, 0, 0, 1);
+		D3DXVECTOR4 difuso = D3DXVECTOR4(0, 0, 0, 1);
+		D3DXVECTOR4 direccionLuz = D3DXVECTOR4(0, 0, 0, 1);
+	};
+	LightBuffer lighBuffer;
+	ID3D11Buffer* lightDirCB;
+
 	ID3D11VertexShader* VertexShaderVS;
 	ID3D11PixelShader* solidColorPS;
 
@@ -329,6 +337,15 @@ public:
 			return false;
 		}
 
+
+		//Crear bufer de nueva estructura
+		constDesc.ByteWidth = sizeof(LightBuffer);
+		d3dResult = d3dDevice->CreateBuffer(&constDesc, 0, &lightDirCB);
+		if (FAILED(d3dResult))
+		{
+			return false;
+		}
+
 		//posicion de la camara
 		D3DXVECTOR3 eye = D3DXVECTOR3(0.0f, 100.0f, 200.0f);
 		//a donde ve
@@ -380,6 +397,8 @@ public:
 			projCB->Release();
 		if(worldCB)
 			worldCB->Release();
+		if (lightDirCB)
+			lightDirCB->Release();
 		if(heightMap)
 			heightMap->Release();
 		if(alturaData)
@@ -413,8 +432,19 @@ public:
 	{
 	}
 
-	void Draw(D3DXMATRIX vista, D3DXMATRIX proyeccion)
+	void Draw(
+		D3DXMATRIX vista, 
+		D3DXMATRIX proyeccion, 
+		D3DXVECTOR4 vecAmbiental,
+		D3DXVECTOR4 vecDifuso,
+		D3DXVECTOR4 direccionLuz
+	)
 	{
+		//Cargar elementos de estrucura de luces
+		lighBuffer.ambiental = vecAmbiental;
+		lighBuffer.difuso = vecAmbiental;
+		lighBuffer.direccionLuz = direccionLuz;
+
 		static float rotation = 0.0f;
 		rotation += 0.01;		
 
@@ -461,12 +491,15 @@ public:
 		d3dContext->UpdateSubresource( worldCB, 0, 0, &worldMat, 0, 0 );
 		d3dContext->UpdateSubresource( viewCB, 0, 0, &vista, 0, 0 );
 		d3dContext->UpdateSubresource( projCB, 0, 0, &proyeccion, 0, 0 );
+		d3dContext->UpdateSubresource(lightDirCB, 0, 0, &lighBuffer, 0, 0);
 		//le pasa al shader los buffers
 		d3dContext->VSSetConstantBuffers( 0, 1, &worldCB );
 		d3dContext->VSSetConstantBuffers( 1, 1, &viewCB );
 		d3dContext->VSSetConstantBuffers( 2, 1, &projCB );
+		d3dContext->VSSetConstantBuffers(3, 1, &lightDirCB);
+
 		//cantidad de trabajos
-		int cuenta = (anchoTexTerr - 1) * (altoTexTerr - 1) * 6;
+		int cuenta = (anchoTexTerr - 1) * (altoTexTerr - 1) * 8;
 		d3dContext->DrawIndexed( cuenta, 0, 0 );
 
 		
