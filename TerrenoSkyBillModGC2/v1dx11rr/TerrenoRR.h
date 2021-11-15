@@ -81,7 +81,7 @@ public:
 			L"Assets/Texturas/Stone_Path_006_normal.jpg",
 			L"Assets/Texturas/blendMap1.jpg", 
 			L"Assets/Texturas/blendMap2.jpg",
-			L"alturas.jpg", 80.0f);
+			L"Terreno.png", 45.0f);
 	}
 
 	~TerrenoRR()
