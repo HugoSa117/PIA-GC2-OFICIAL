@@ -20,8 +20,8 @@ private:
 	struct VertexComponent
 	{
 		D3DXVECTOR3 pos;
-		D3DXVECTOR2 UV;		
-		D3DXVECTOR3 normal;		
+		D3DXVECTOR2 UV;
+		D3DXVECTOR3 normal;
 	};
 
 	struct VertexCollide
@@ -37,6 +37,16 @@ private:
 		float u, v;
 	};
 
+
+	struct LightBuffer {
+		D3DXVECTOR4 ambiental = D3DXVECTOR4(0, 0, 0, 1);
+		D3DXVECTOR4 difuso = D3DXVECTOR4(0, 0, 0, 1);
+		D3DXVECTOR4 direccionLuz = D3DXVECTOR4(0, 0, 0, 1);
+	};
+
+	LightBuffer lighBuffer;
+	ID3D11Buffer* lightDirCB;
+
 	ID3D11VertexShader* VertexShaderVS;
 	ID3D11PixelShader* solidColorPS;
 
@@ -46,6 +56,7 @@ private:
 
 	ID3D11ShaderResourceView* colorMap;
 	ID3D11ShaderResourceView* specMap;
+	ID3D11ShaderResourceView* normalMap;
 	ID3D11SamplerState* colorMapSampler;
 
 	ID3D11Buffer* viewCB;
@@ -68,35 +79,43 @@ private:
 	ID3D11DeviceContext* d3dContext;
 
 	CObjParser m_ObjParser;
-	
+
 	float posX;
 	float posZ;
 
 public:
-	ModeloRR(ID3D11Device* D3DDevice, ID3D11DeviceContext* D3DContext, char* ModelPath, WCHAR* colorTexturePath, WCHAR* specularTexturePath, float _posX, float _posZ)
+	ModeloRR(
+		ID3D11Device* D3DDevice,
+		ID3D11DeviceContext* D3DContext,
+		char* ModelPath,
+		WCHAR* colorTexturePath,
+		WCHAR* specularTexturePath,
+		WCHAR* normalTexturePath,
+		float _posX,
+		float _posZ)
 	{
 		//copiamos el device y el device context a la clase terreno
 		d3dContext = D3DContext;
-		d3dDevice = D3DDevice;	
+		d3dDevice = D3DDevice;
 
 		posX = _posX;
 		posZ = _posZ;
 
 		//aqui cargamos las texturas de alturas y el cesped
-		CargaParametros(ModelPath, colorTexturePath, specularTexturePath);//L"Assets/Tent-Tower/tent_diffuse.jpg"
+		CargaParametros(ModelPath, colorTexturePath, specularTexturePath, normalTexturePath);//L"Assets/Tent-Tower/tent_diffuse.jpg"
 	}
 
 	~ModeloRR()
 	{
 		//libera recursos
-		
+
 		UnloadContent();
 	}
 
 	float getPosX() {
 		return this->posX;
 	}
-	
+
 	float getPosZ() {
 		return this->posZ;
 	}
@@ -127,10 +146,10 @@ public:
 		return true;
 	}
 
-	bool CargaParametros(char* ModelPath, WCHAR* diffuseTex, WCHAR* specularTex)
+	bool CargaParametros(char* ModelPath, WCHAR* diffuseTex, WCHAR* specularTex, WCHAR* normalTex)
 	{
 		HRESULT d3dResult;
-		
+
 		ID3DBlob* vsBuffer = 0;
 
 		//cargamos el shaders de vertices que esta contenido en el Shader.fx, note
@@ -161,7 +180,7 @@ public:
 		D3D11_INPUT_ELEMENT_DESC solidColorLayout[] =
 		{
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },			
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		};
 
@@ -217,18 +236,19 @@ public:
 			MessageBox(0, L"Error", L"Error al crear vertex buffer", MB_OK);
 			return false;
 		}
-	
-		
+
+
 		//crea los accesos de las texturas para los shaders 
 		d3dResult = D3DX11CreateShaderResourceViewFromFile(d3dDevice, diffuseTex, 0, 0, &colorMap, 0);
 		d3dResult = D3DX11CreateShaderResourceViewFromFile(d3dDevice, specularTex, 0, 0, &specMap, 0);
-		
+		d3dResult = D3DX11CreateShaderResourceViewFromFile(d3dDevice, normalTex, 0, 0, &normalMap, 0);
+
 		if (FAILED(d3dResult))
 		{
 			return false;
 		}
 
-		
+
 
 		//aqui creamos el sampler
 		D3D11_SAMPLER_DESC colorMapDesc;
@@ -285,6 +305,14 @@ public:
 			return false;
 		}
 
+		//Crear bufer de nueva estructura
+		constDesc.ByteWidth = sizeof(LightBuffer);
+		d3dResult = d3dDevice->CreateBuffer(&constDesc, 0, &lightDirCB);
+		if (FAILED(d3dResult))
+		{
+			return false;
+		}
+
 		//posicion de la camara
 		D3DXVECTOR3 eye = D3DXVECTOR3(0.0f, 100.0f, 200.0f);
 		//a donde ve
@@ -310,6 +338,8 @@ public:
 			colorMap->Release();
 		if (specMap)
 			specMap->Release();
+		if (normalMap)
+			normalMap->Release();
 		if (VertexShaderVS)
 			VertexShaderVS->Release();
 		if (solidColorPS)
@@ -329,11 +359,12 @@ public:
 			cameraPosCB->Release();
 		if (specForceCB)
 			specForceCB->Release();
-		
+
 
 		colorMapSampler = 0;
 		colorMap = 0;
 		specMap = 0;
+		normalMap = 0;
 		VertexShaderVS = 0;
 		solidColorPS = 0;
 		inputLayout = 0;
@@ -351,8 +382,25 @@ public:
 
 	}
 
-	void Draw(D3DXMATRIX vista, D3DXMATRIX proyeccion, float ypos, D3DXVECTOR3 posCam, float specForce, float rot, char angle, float scale)
+	void Draw(
+		D3DXMATRIX vista,
+		D3DXMATRIX proyeccion,
+		float ypos,
+		D3DXVECTOR3 posCam,
+		float specForce,
+		float rot,
+		char angle,
+		float scale,
+		D3DXVECTOR4 luzAmbiental,
+		D3DXVECTOR4 luzDifusa,
+		D3DXVECTOR4 direccionLuz)
 	{
+
+		//Cargar elementos de estrucura de luces
+		lighBuffer.ambiental = luzAmbiental;
+		lighBuffer.difuso = luzDifusa;
+		lighBuffer.direccionLuz = direccionLuz;
+
 		static float rotation = 0.0f;
 		rotation += 0.01;
 
@@ -377,8 +425,9 @@ public:
 		d3dContext->VSSetShader(VertexShaderVS, 0, 0);
 		d3dContext->PSSetShader(solidColorPS, 0, 0);
 		//pasa lo sbuffers al shader
-		d3dContext->PSSetShaderResources(0, 1, &colorMap);	
+		d3dContext->PSSetShaderResources(0, 1, &colorMap);
 		d3dContext->PSSetShaderResources(1, 1, &specMap);
+		d3dContext->PSSetShaderResources(2, 1, &normalMap);
 
 		d3dContext->PSSetSamplers(0, 1, &colorMapSampler);
 
@@ -387,7 +436,7 @@ public:
 		D3DXMatrixRotationYawPitchRoll(&rotationMat, 0.0f, 0.0f, 0.0f);
 		D3DXMATRIX translationMat;
 		D3DXMatrixTranslation(&translationMat, posX, ypos, posZ);
-		if(angle == 'X')
+		if (angle == 'X')
 			D3DXMatrixRotationX(&rotationMat, rot);
 		else if (angle == 'Y')
 			D3DXMatrixRotationY(&rotationMat, rot);
@@ -396,7 +445,7 @@ public:
 		viewMatrix *= rotationMat;
 
 		D3DXMATRIX scaleMat;
-		D3DXMatrixScaling(&scaleMat, scale,scale,scale);
+		D3DXMatrixScaling(&scaleMat, scale, scale, scale);
 
 		D3DXMATRIX worldMat = rotationMat * scaleMat * translationMat;
 		D3DXMatrixTranspose(&worldMat, &worldMat);
@@ -406,15 +455,17 @@ public:
 		d3dContext->UpdateSubresource(projCB, 0, 0, &proyeccion, 0, 0);
 		d3dContext->UpdateSubresource(cameraPosCB, 0, 0, &camPos, 0, 0);
 		d3dContext->UpdateSubresource(specForceCB, 0, 0, &specForce, 0, 0);
+		d3dContext->UpdateSubresource(lightDirCB, 0, 0, &lighBuffer, 0, 0);
 		//le pasa al shader los buffers
 		d3dContext->VSSetConstantBuffers(0, 1, &worldCB);
 		d3dContext->VSSetConstantBuffers(1, 1, &viewCB);
 		d3dContext->VSSetConstantBuffers(2, 1, &projCB);
 		d3dContext->VSSetConstantBuffers(3, 1, &cameraPosCB);
 		d3dContext->VSSetConstantBuffers(4, 1, &specForceCB);
+		d3dContext->VSSetConstantBuffers(5, 1, &lightDirCB);
 		//cantidad de trabajos
-		
-		d3dContext->Draw(m_ObjParser.m_nVertexCount, 0);
+
+		d3dContext->Draw(m_ObjParser.m_nVertexCount + 2, 0);
 
 
 	}

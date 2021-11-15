@@ -97,7 +97,7 @@ public:
 		terreno = new TerrenoRR(256, 256, d3dDevice, d3dContext);
 		skydome = new SkyDome(40, 40, 200.0f, &d3dDevice, &d3dContext, L"skydome1.png", L"skydome2.jpg");
 		billboard = new BillboardRR(L"Assets/Billboards/fuego-anim.png",L"Assets/Billboards/fuego-anim-normal.png", d3dDevice, d3dContext, 5);
-		model = new ModeloRR(d3dDevice, d3dContext, "Assets/Cofre/Cofre.obj", L"Assets/Cofre/Cofre-color.png", L"Assets/Cofre/Cofre-spec.png", 0, 0);
+		//model = new ModeloRR(d3dDevice, d3dContext, "Assets/Cofre/Cofre.obj", L"Assets/Cofre/Cofre-color.png", L"Assets/Cofre/Cofre-spec.png", 0, 0);
 
 		//Billboards
 		arbol01 = new BillboardRR(L"Assets/Billboards/tree01_colorMap.png", L"Assets/Billboards/tree01_normalMap.png", d3dDevice, d3dContext, 10);
@@ -106,14 +106,14 @@ public:
 		arbol04 = new BillboardRR(L"Assets/Billboards/tree04_colorMap.png", L"Assets/Billboards/tree04_normalMap.png", d3dDevice, d3dContext, 10);
 
 		//Nuevos modelos
-		banca01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Banca01/banca01.obj", L"Assets/Banca01/color_banca01.png", L"Assets/Banca01/specular_banca01.png", 40, 0);
-		cabaña01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña01/cabaña01.obj", L"Assets/Cabaña01/color_cabaña01.jpg", L"Assets/Cabaña01/specular_cabaña01.jpg", 75, 0);
-		techoCabaña01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña01/techoCabaña01.obj", L"Assets/Cabaña01/color_techoCabaña01.jpg", L"Assets/Cabaña01/specular_techoCabaña1.jpg", 75, 0);
-		cabaña02 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña02/cabaña02.obj", L"Assets/Cabaña02/color_cabaña02.jpg", L"Assets/Cabaña02/specular_cabaña02.jpg", 50, 0);
-		cabaña03 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña03/cabaña03.obj", L"Assets/Cabaña03/color_cabaña03.png", L"Assets/Cabaña03/specular_cabaña03.png", 25, 0);
-		troncos01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Tronco/Troncos.obj", L"Assets/Tronco/color_tronco.png", L"Assets/Tronco/specular_tronco.jpg", -25, 0);
-		camioneta01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Camioneta01/camioneta01.obj", L"Assets/Camioneta01/color_camioneta01.jpg", L"Assets/Camioneta01/specular_camioneta01.png", -5, 0);
-		
+		banca01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Banca01/banca01.obj", L"Assets/Banca01/color_banca01.png", L"Assets/Banca01/specular_banca01.png", L"Assets/Banca01/normal_banca01.png", 40, 0);
+		cabaña01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña01/cabaña01.obj", L"Assets/Cabaña01/color_cabaña01.jpg", L"Assets/Cabaña01/specular_cabaña01.jpg", L"Assets/Cabaña01/normal_cabaña01.jpg", 75, 0);
+		techoCabaña01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña01/techoCabaña01.obj", L"Assets/Cabaña01/color_techoCabaña01.jpg", L"Assets/Cabaña01/specular_techoCabaña1.jpg", L"Assets/Cabaña01/normal_techoCabaña01.jpg", 75, 0);
+		cabaña02 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña02/cabaña02.obj", L"Assets/Cabaña02/color_cabaña02.jpg", L"Assets/Cabaña02/specular_cabaña02.jpg", L"Assets/Cabaña02/normal_cabaña02.jpg", 50, 0);
+		cabaña03 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña03/cabaña03.obj", L"Assets/Cabaña03/color_cabaña03.png", L"Assets/Cabaña03/specular_cabaña03.png", L"Assets/Cabaña03/normal_cabaña03.png", 25, 0);
+		troncos01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Tronco/Troncos.obj", L"Assets/Tronco/color_tronco.png", L"Assets/Tronco/specular_tronco.jpg", L"Assets/Tronco/normal_tronco.jpg", -25, 0);
+		camioneta01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Camioneta01/camioneta01.obj", L"Assets/Camioneta01/color_camioneta01.jpg", L"Assets/Camioneta01/specular_camioneta01.png", L"Assets/Camioneta01/normal_camioneta01.png", -5, 0);
+
 
 		
 	}
@@ -402,13 +402,13 @@ public:
 
 		//Nuevos modelos
 
-		/*banca01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(40, 20) , camara->posCam, 10.0f, 0, 'A', 1);
-		cabaña01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(75, 20) , camara->posCam, 10.0f, 0, 'A', 1);
-		techoCabaña01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(75, 20) , camara->posCam, 10.0f, 0, 'A', 1);
-		cabaña02->Draw(camara->vista, camara->proyeccion, terreno->Superficie(50, 20) , camara->posCam, 10.0f, 0, 'A', 1);
-		cabaña03->Draw(camara->vista, camara->proyeccion, terreno->Superficie(20, 0) , camara->posCam, 10.0f, 0, 'Y', 1);
-	    troncos01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(-25, 0), camara->posCam, 10.0f, 0, 'A', 1);
-		camioneta01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(40, 0), camara->posCam, 10.0f, 0, 'A', 1);*/
+		banca01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(40, 20) , camara->posCam, 10.0f, 0, 'A', 1, AMBIENTAL, DIFUSO, SOL);
+		cabaña01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(75, 20) , camara->posCam, 10.0f, 0, 'A', 1, AMBIENTAL, DIFUSO, SOL);
+		techoCabaña01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(75, 20) , camara->posCam, 10.0f, 0, 'A', 1, AMBIENTAL, DIFUSO, SOL);
+		cabaña02->Draw(camara->vista, camara->proyeccion, terreno->Superficie(50, 20) +4 , camara->posCam, 10.0f, 0, 'A', 1, AMBIENTAL, DIFUSO, SOL);
+		cabaña03->Draw(camara->vista, camara->proyeccion, terreno->Superficie(20, 0) , camara->posCam, 10.0f, 0, 'Y', 1, AMBIENTAL, DIFUSO, SOL);
+	    troncos01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(-25, 0), camara->posCam, 10.0f, 0, 'A', 1, AMBIENTAL, DIFUSO, SOL);
+		camioneta01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(40, 0), camara->posCam, 10.0f, 0, 'A', 1, AMBIENTAL, DIFUSO, SOL);
 
 		swapChain->Present( 1, 0 );
 	}
