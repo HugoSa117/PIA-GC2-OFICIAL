@@ -112,7 +112,7 @@ public:
 		cabaña02 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña02/cabaña02.obj", L"Assets/Cabaña02/color_cabaña02.jpg", L"Assets/Cabaña02/specular_cabaña02.jpg", L"Assets/Cabaña02/normal_cabaña02.jpg", 50, 0);
 		cabaña03 = new ModeloRR(d3dDevice, d3dContext, "Assets/Cabaña03/cabaña03.obj", L"Assets/Cabaña03/color_cabaña03.png", L"Assets/Cabaña03/specular_cabaña03.png", L"Assets/Cabaña03/normal_cabaña03.png", 25, 0);
 		troncos01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Tronco/Troncos.obj", L"Assets/Tronco/color_tronco.png", L"Assets/Tronco/specular_tronco.jpg", L"Assets/Tronco/normal_tronco.jpg", -25, 0);
-		camioneta01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Camioneta01/camioneta01.obj", L"Assets/Camioneta01/color_camioneta01.jpg", L"Assets/Camioneta01/specular_camioneta01.png", L"Assets/Camioneta01/normal_camioneta01.png", -5, 0);
+		camioneta01 = new ModeloRR(d3dDevice, d3dContext, "Assets/Camioneta01/camioneta01.obj", L"Assets/Camioneta01/color_camioneta01.jpg", L"Assets/Camioneta01/specular_camioneta01.png", L"Assets/Camioneta01/normal_camioneta01.png",10 ,0);
 
 
 		

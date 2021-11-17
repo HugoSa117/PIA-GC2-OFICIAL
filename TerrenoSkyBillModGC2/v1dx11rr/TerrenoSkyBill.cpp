@@ -101,7 +101,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
         NULL);
 
     ShowWindow(hWnd, nCmdShow);
-    dxrr = new DXRR(hWnd, 800, 600);
+    dxrr = new DXRR(hWnd, 800, 500);
     dxrr->vel = 0;
     dxrr->vel2 = 0;
 
