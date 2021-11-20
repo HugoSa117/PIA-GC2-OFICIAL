@@ -10,6 +10,8 @@
 #include "Billboard.h"
 #include "ModeloRR.h"
 #include "XACT3Util.h"
+#include "Water.h"
+
 
 class DXRR{	
 
@@ -44,6 +46,7 @@ public:
 	TerrenoRR *terreno;
 	SkyDome *skydome;
 	BillboardRR *billboard;
+	Water* water;
 	//Billboards
 	BillboardRR* arbol01;
 	BillboardRR* arbol02;
@@ -96,6 +99,9 @@ public:
 		camara = new Camara(D3DXVECTOR3(0,80,6), D3DXVECTOR3(0,80,0), D3DXVECTOR3(0,1,0), Ancho, Alto);
 		terreno = new TerrenoRR(256, 256, d3dDevice, d3dContext);
 		skydome = new SkyDome(40, 40, 200.0f, &d3dDevice, &d3dContext, L"skydome1.png", L"skydome2.jpg");
+
+		water = new Water(80, 60, d3dDevice, d3dContext);
+
 		billboard = new BillboardRR(L"Assets/Billboards/fuego-anim.png",L"Assets/Billboards/fuego-anim-normal.png", d3dDevice, d3dContext, 5);
 		//model = new ModeloRR(d3dDevice, d3dContext, "Assets/Cofre/Cofre.obj", L"Assets/Cofre/Cofre-color.png", L"Assets/Cofre/Cofre-spec.png", 0, 0);
 
@@ -289,7 +295,7 @@ public:
 		D3DXCOLOR colorNoche = D3DXCOLOR(60, 138, 207, 1);
 
 		D3DXCOLOR colorAmbiental;
-		D3DXCOLOR colorDifuso = D3DXCOLOR(255 /255, 255 /255, 255 /255, 1);
+		D3DXCOLOR colorDifuso;
 
 		///////////////////////ROTACION DE SOL///////////////////////
 		static float factorRotacion = 0.0;
@@ -311,23 +317,26 @@ public:
 
 
 		///////////////////////CALCULO DE LUCES///////////////////////
-
 		float blend = 0;		//de 0 a 1 (cuando su maximo es 0.25)
 		if (factorRotacion <= 0.25) {
 			blend = factorRotacion * 4;	
 			D3DXColorLerp(&colorAmbiental, &colorDia, &colorTarde, blend);
+			D3DXColorLerp(&colorDifuso, &colorDia, &colorTarde, blend);
 		}
 		else if (factorRotacion <= 0.5 && factorRotacion > 0.25) {
 			blend = (factorRotacion - 0.25) * 4;
 			D3DXColorLerp(&colorAmbiental, &colorTarde, &colorNoche, blend);
+			D3DXColorLerp(&colorDifuso, &colorTarde, &colorNoche, blend);
 		}
 		else if (factorRotacion <= 0.75 && factorRotacion > 0.5) {
 			blend = (factorRotacion - 0.5) * 4;
 			D3DXColorLerp(&colorAmbiental, &colorNoche, &colorTarde, blend);
+			D3DXColorLerp(&colorDifuso, &colorNoche, &colorTarde, blend);
 		}
 		else if (factorRotacion > 0.75) {
 			blend = (factorRotacion - 0.75) * 4;
 			D3DXColorLerp(&colorAmbiental, &colorTarde, &colorDia, blend);
+			D3DXColorLerp(&colorDifuso, &colorTarde, &colorDia, blend);
 		}
 
 		//Crear vectores de luz resultantes
@@ -337,8 +346,12 @@ public:
 			colorAmbiental.b / 255), 
 			1
 		);
-
-		D3DXVECTOR4 DIFUSO = D3DXVECTOR4(D3DXVECTOR3(colorDifuso), 1);
+		D3DXVECTOR4 DIFUSO = D3DXVECTOR4(D3DXVECTOR3(
+			colorDifuso.r / 255,
+			colorDifuso.g / 255,
+			colorDifuso.b / 255),
+			1
+		);
 
 
 		/////////////////////////ACTUALIZAR BLEND DE SKYDOME///////////////
@@ -357,6 +370,15 @@ public:
 		else {
 			dia = true;
 		}
+
+		/////////////////////////BLEND AGUA///////////////
+		static float timeWater = 0.0;
+		static float displacementWater = 0.0;
+		float sinWater = sin(timeWater);
+		float blendWater = (sinWater + 1) * 0.5; //Seno va de -1 a 1, la funcion devuelve de 0 a 1
+		timeWater += 0.01;
+
+		displacementWater = blendWater;
 
 		float sphere[3] = { 0,0,0 };
 		float prevPos[3] = { camara->posCam.x, camara->posCam.z, camara->posCam.z };
@@ -380,6 +402,8 @@ public:
 		skydome->Render(camara->posCam, angle, AMBIENTAL, blendSky);
 		TurnOnDepth();
 		terreno->Draw(camara->vista, camara->proyeccion, AMBIENTAL, DIFUSO, SOL);
+
+		water->Draw(camara->vista, camara->proyeccion, 85.0 , -18.5 - displacementWater, 70.0 + displacementWater, camara->posCam, AMBIENTAL, DIFUSO, SOL, blendWater);
 		//TurnOnAlphaBlending();
 		/*billboard->Draw(camara->vista, camara->proyeccion, camara->posCam,
 			-11, -78, 4, 5, uv1, uv2, uv3, uv4, frameBillboard);*/
@@ -403,7 +427,7 @@ public:
 		//Nuevos modelos
 
 		banca01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(40, 20) , camara->posCam, 10.0f, 0, 'A', 1, AMBIENTAL, DIFUSO, SOL);
-		cabaña01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(75, 20) , camara->posCam, 10.0f, 0, 'A', 1, AMBIENTAL, DIFUSO, SOL);
+		cabaña01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(75, 20) , camara->posCam, 50.0f, 0, 'A', 1, AMBIENTAL, DIFUSO, SOL);
 		techoCabaña01->Draw(camara->vista, camara->proyeccion, terreno->Superficie(75, 20) , camara->posCam, 10.0f, 0, 'A', 1, AMBIENTAL, DIFUSO, SOL);
 		cabaña02->Draw(camara->vista, camara->proyeccion, terreno->Superficie(50, 20) +4 , camara->posCam, 10.0f, 0, 'A', 1, AMBIENTAL, DIFUSO, SOL);
 		cabaña03->Draw(camara->vista, camara->proyeccion, terreno->Superficie(20, 0) , camara->posCam, 10.0f, 0, 'Y', 1, AMBIENTAL, DIFUSO, SOL);

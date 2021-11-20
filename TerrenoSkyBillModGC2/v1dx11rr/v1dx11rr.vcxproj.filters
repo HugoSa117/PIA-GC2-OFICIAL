@@ -42,9 +42,15 @@
     <ClInclude Include="XACT3Util.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
+    <ClInclude Include="Water.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader.fx">
+      <Filter>Archivos de código fuente</Filter>
+    </None>
+    <None Include="Water.fx">
       <Filter>Archivos de código fuente</Filter>
     </None>
   </ItemGroup>

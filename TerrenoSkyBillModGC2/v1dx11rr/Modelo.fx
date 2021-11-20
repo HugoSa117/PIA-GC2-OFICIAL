@@ -48,7 +48,7 @@ struct PS_Input
 	float4 pos : SV_POSITION;
 	float2 tex0 : TEXCOORD0;
 	float3 normal : TEXCOORD1;
-	float3 campos : TEXCOORD2;
+	float3 campos : TEXCOORD2;	//pos vertice
 	float specForce : TEXCOORD3;
 
 	float3 ambient : COLOR0;
@@ -72,7 +72,7 @@ PS_Input VS_Main(VS_Input vertex)
 
 	worldPosition = mul(vertex.pos, worldMatrix);
 
-	//
+	//posicion camara
 	vsOut.campos = cameraPos.xyz - worldPosition.xyz;
 	vsOut.campos = normalize(vsOut.campos);
 
@@ -87,10 +87,7 @@ PS_Input VS_Main(VS_Input vertex)
 
 float4 PS_Main(PS_Input pix) : SV_TARGET
 {
-	float3 lightDir;
-	float3 reflection;
-	float4 specularMap;
-	float4 finalSpec;
+
 	float4 color;
 
 	float4 colorText = colorMap.Sample(colorSampler, pix.tex0);
@@ -99,132 +96,39 @@ float4 PS_Main(PS_Input pix) : SV_TARGET
 
 
 	//Normales
-	//float3 bumpMap = (2.0 * normalText) - 1.0;	//de rgb a xyz
+	float3 bumpMap = (2.0 * normalText) - 1.0;	//de rgb a xyz
 	//float3x3 TBN = { { pix.tangent }, { pix.binorm }, { pix.normal} };
-	//float3 newNormal = mul(TBN, bumpMap);
-	//newNormal = normalize(newNormal);
+	//float3 newNormal = normalize(mul(TBN, bumpMap));
 
-	float3 Normal = normalize(pix.normal);
-	//Normal = mul(bumpMap, Normal);
-	//Normal = normalize(Normal);
 
 	////////////////////////LUZ AMBIENTAL////////////////////////
-	float4 LuzAmbiental = float4(pix.ambient, 1);	//luz ambiental
-	float FA = 0.8;									//factor atenuacion ambiental
-	float4 AportAmb = LuzAmbiental * FA;			//aportacion ambiental
-	color = AportAmb;
+	float3 LuzAmbiental = pix.ambient;					//luz ambiental
+	float FA = 0.65;										//factor atenuacion ambiental
+	float3 AportAmb = saturate(LuzAmbiental * FA);		//aportacion ambiental
+	//color = AportAmb;
 
 	////////////////////////LUZ DIFUSA////////////////////////
 	float3 DirLuz = normalize(pix.lightDirection);			//Direccion de luz
-	float4 LuzDifusa = float4(pix.diffuse, 1);				//luz difusa
-	float FAD = 1.0;										//factor atenuacion difusa
-	float FALL = dot(-DirLuz, Normal);					//factor atenuacion ley de lambert
-	float4 AportDif = saturate(LuzDifusa * FALL * FAD);		//aportacion difusa 0 a 1
+	float3 LuzDifusa = pix.diffuse;							//luz difusa
+	float FAD = 0.9;										//factor atenuacion difusa
+	float3 FALL = dot(DirLuz, pix.normal);					//factor atenuacion ley de lambert
+	float3 AportDif = saturate(LuzDifusa * FALL * FAD);		//aportacion difusa 0 a 1
 
 	////////////////////////LUZ ESPECULAR////////////////////////
-	float4 specular = float4(1.0, 1.0, 1.0, 1.0);	//color especular
-	float shininess = pix.specForce;				//Factor de atenuacion especular
-	float4 AportSpec;
-	float lightIntensity = saturate(dot(pix.normal, -DirLuz));	//Intensidad de reflejo en pixel
-	float3 reflejo;
-	float3 vista = pix.campos;	//vector de vista (direccionCamara - posVertice)
-
-	//Si la intensidad de reflejo del pixel es mayor a 0
-	if (lightIntensity > 0) {
-		//calcular el color difuso en base a laintensidad de reflejo
-		color += (AportDif * lightIntensity);
-		color = saturate(color);
-
-		//calcular vector de reflejo
-		reflejo = normalize(2 * lightIntensity * pix.normal - DirLuz);
-
-		AportSpec = pow(saturate(dot(reflejo, vista)), shininess);
-		AportSpec = AportSpec * specularText;
-	}
-
-	color = color * (AportAmb + AportDif);
+	float3 intensidadR = dot(pix.normal, DirLuz);					//Intensidad de reflejo
+	float3 reflejo = normalize(2 * intensidadR * pix.normal - DirLuz);	//vector de reflejo 
+	float shininess = 10.0;								//Factor de atenuacion especular 
+	float FAS = 1.0;									//Intensidad de especularidad
+	float3 vista = normalize(pix.campos - pix.pos);		//vector de vista (posCamara - posVertice)
+	//calcular componente especular: 
+	float Specular = pow(saturate(dot(reflejo, pix.campos)), shininess) * FAS;
+	float3 AportSpec = Specular * specularText;
 
 
 
-	//Resultado
-	color = colorText * colorText;
-	color = saturate(color + AportSpec);
-
+	////////////////////////RESULTADO////////////////////////
+	float3 aportaciones = AportAmb + AportDif + AportSpec;
+	color = float4(colorText * aportaciones, 1);
 	return color;
 
-
-	specular = float4(0.0, 0.0, 0.0, 1.0); //specular color
-	specularMap = specMap.Sample(colorSampler, pix.tex0);
-
-	lightDir = -(float3(0.5f, -1.0f, 0.0f)); // lightDirection
-
-	lightIntensity = saturate(dot(pix.normal, lightDir));
-
-	if (lightIntensity > 0) {
-		// Determine the final diffuse color based on the diffuse color and the amount of light intensity.
-		color += (float4(1.0f, 1.f, 1.f, 1.0f)/*diffuse color*/ * lightIntensity);
-
-		// Saturate the ambient and diffuse color.
-		color = saturate(color);
-
-		// Calculate the reflection vector based on the light intensity, normal vector, and light direction.
-		reflection = normalize(2 * lightIntensity * pix.normal - lightDir);
-
-		// Determine the amount of specular light based on the reflection vector, viewing direction, and specular power.
-		specular = pow(saturate(dot(reflection, pix.campos)), pix.specForce);
-		finalSpec = specular * specularMap;
-	}
-
-	color = LuzAmbiental * colorText;
-
-	color = saturate(color + finalSpec);
-
-	return color;
 }
-
-
-/*
-
-float4 PS_Main(PS_Input pix) : SV_TARGET
-{
-	float4 textureColor;
-	float3 lightDir;
-	float lightIntensity;
-	float4 color;
-	float3 reflection;
-	float4 specular;
-	float4 specularMap;
-	float4 finalSpec;
-
-	textureColor = colorMap.Sample(colorSampler, pix.tex0);
-	color = float4(pix.ambient, 1);// ambient color
-
-	specular = float4(0.0, 0.0, 0.0, 1.0); //specular color
-	specularMap = specMap.Sample(colorSampler, pix.tex0);
-
-	lightDir = -(float3(0.5f, -1.0f, 0.0f)); // lightDirection
-
-	lightIntensity = saturate(dot(pix.normal, lightDir));
-
-	if (lightIntensity > 0) {
-		// Determine the final diffuse color based on the diffuse color and the amount of light intensity.
-		color += (float4(1.0f, 1.f, 1.f, 1.0f) lightIntensity);//diffuse color
-
-		// Saturate the ambient and diffuse color.
-		color = saturate(color);
-
-		// Calculate the reflection vector based on the light intensity, normal vector, and light direction.
-		reflection = normalize(2 * lightIntensity * pix.normal - lightDir);
-
-		// Determine the amount of specular light based on the reflection vector, viewing direction, and specular power.
-		specular = pow(saturate(dot(reflection, pix.campos)), pix.specForce);
-		finalSpec = specular * specularMap;
-	}
-
-	color = color * textureColor;
-
-	color = saturate(color + finalSpec);
-
-	return color;
-}
-*/

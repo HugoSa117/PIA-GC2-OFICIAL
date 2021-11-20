@@ -165,6 +165,7 @@
     <ClInclude Include="ModeloRR.h" />
     <ClInclude Include="SkyDome.h" />
     <ClInclude Include="TerrenoRR.h" />
+    <ClInclude Include="Water.h" />
     <ClInclude Include="XACT3Util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -177,6 +178,9 @@
     <FxCompile Include="Billboard.fx" />
     <FxCompile Include="Billboard.hlsl" />
     <FxCompile Include="Modelo.fx" />
+    <None Include="Water.fx">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

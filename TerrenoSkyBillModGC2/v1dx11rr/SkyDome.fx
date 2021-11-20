@@ -48,9 +48,7 @@ float4 PS_Main(PS_Input pix) : SV_TARGET
 	
 	float4 tex1 = textures.Sample(colorSampler, pix.tex0);
 	float4 tex2 = textures2.Sample(colorSampler, pix.tex0);
-	//pix.blend
 	float4 finalColor = lerp(tex1, tex2, pix.blend);
-	//float4 finalColor = tex1;
 
 	////////////////////////LUZ AMBIENTAL////////////////////////
 	float4 luz = float4(1,1,1, 1);

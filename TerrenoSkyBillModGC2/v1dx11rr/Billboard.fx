@@ -63,6 +63,7 @@ float4 PS_Main(PS_Input pix) : SV_TARGET
 {
 
 	float4 textColor = colorMap.Sample(colorSampler, pix.tex0);
+	float4 textNorm = normalMap.Sample(colorSampler, pix.tex0);
 
 	if (textColor.a < 0.02) {
 		
@@ -71,26 +72,24 @@ float4 PS_Main(PS_Input pix) : SV_TARGET
 	}
 	else {
 
-		float4 textNorm = normalMap.Sample(colorSampler, pix.tex0);
-
-
 		////////////////////////LUZ AMBIENTA////////////////////////
-		float4 LuzAmbiental = float4(pix.ambient, 1);	//luz ambiental
-		float FA = 0.8;									//factor atenuacion ambiental
-		float4 AportAmb = LuzAmbiental * FA;			//aportacion ambiental
+		float3 LuzAmbiental = pix.ambient;					//luz ambiental
+		float FA = 0.65;									//factor atenuacion ambiental
+		float3 AportAmb = saturate(LuzAmbiental * FA);		//aportacion ambiental
 
 		////////////////////////LUZ DIFUSA////////////////////////
 		float3 DirLuz = pix.lightDirection;				//Direccion de luz
-		float4 LuzDifusa = float4(pix.diffuse, 1);		//luz difusa
-		float FAD = 1;									//factor atenuacion difusa
+		float3 LuzDifusa = pix.diffuse;					//luz difusa
+		float FAD = 0.8;								//factor atenuacion difusa
 
-		float3 bump = normalize(2.0 * textNorm - 1.0);	//de rgb a xyz
-		float FALL = dot(normalize(-DirLuz),bump);	//factor atenuacion ley de lambert
-		float4 AportLuzDif = saturate(LuzDifusa * FALL * FAD);	//aportacion difusa
+		float3 bump = normalize(2.0 * textNorm - 1.0);			//de rgb a xyz
+		float FALL = dot(normalize(DirLuz),bump);				//factor atenuacion ley de lambert
+		float3 AportLuzDif = saturate(LuzDifusa * FALL * FAD);	//aportacion difusa
 
 		////////////////////////RESULTADO////////////////////////
-		textColor = textColor * (AportAmb + AportLuzDif);
+		float3 aportaciones = saturate(AportAmb + AportLuzDif);
+		textColor = float4(textColor.rgb * aportaciones, 1);
 		//textColor.a = 1;
-		return textColor; //* (aportAmb + aportDif);
+		return textColor; 
 	}
 }
